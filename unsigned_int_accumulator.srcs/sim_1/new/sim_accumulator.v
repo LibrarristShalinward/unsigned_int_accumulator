@@ -22,30 +22,29 @@
 
 module sim_accumulator();
     reg in10, in11, in12, in13; 
-    reg in20, in21, in22, in23; 
+    reg in20, in21, in22, in23;
+    reg clk, rst;
     wire out0, out1, out2, out3; 
     wire overflow;
+    wire [6:0] a_g_a, a_g_b; 
+    wire [3:0] an, bn;
      
     initial begin
         in10 = 1'b0; 
         in11 = 1'b0; 
         in12 = 1'b0; 
-        in13 = 1'b0; 
-        in20 = 1'b0; 
-        in21 = 1'b0; 
-        in22 = 1'b0; 
-        in23 = 1'b0; 
-        #2560;
+        in13 = 1'b1; 
+        in20 = 1'b1; 
+        in21 = 1'b1; 
+        in22 = 1'b1; 
+        in23 = 1'b1; 
+        clk = 1'b0;
+        rst = 1'b0;
+        #1 rst = 1'b1;
+        #3000000000;
     end
     
-    always #10 in10 = ~in10; 
-    always #20 in11 = ~in11; 
-    always #40 in12 = ~in12; 
-    always #80 in13 = ~in13; 
-    always #160 in20 = ~in20; 
-    always #320 in21 = ~in21; 
-    always #640 in22 = ~in22; 
-    always #1280 in23 = ~in23; 
+    always #5 clk = ~clk;
     
     unsigned_int_accumulator uut(
     .in10(in10), 
@@ -55,10 +54,17 @@ module sim_accumulator();
     .in20(in20), 
     .in21(in21), 
     .in22(in22), 
-    .in23(in23), 
+    .in23(in23),
+    .clk(clk),
+    .rst(rst), 
     .out0(out0), 
     .out1(out1), 
     .out2(out2), 
     .out3(out3),
-    .overflow(overflow)); 
+    .overflow(overflow), 
+    .a_g_a(a_g_a),
+    .a_g_b(a_g_b),
+    .an(an),
+    .bn(bn)
+);
 endmodule

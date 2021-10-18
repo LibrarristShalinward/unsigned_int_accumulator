@@ -1,30 +1,16 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2021/10/06 11:59:30
-// Design Name: 
-// Module Name: unsigned_int_accumulator
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module unsigned_int_accumulator(
     input in10, in11, in12, in13, 
     input in20, in21, in22, in23, 
+    input clk, //时钟信号
+    input rst, //复位信号
     output out0, out1, out2, out3, 
-    output overflow);
+    output overflow,
+    output reg [6:0] a_g_a, //第一组段信号
+    output reg [6:0] a_g_b, //第二组段信号
+    output reg [3:0] an, //第一组位选信号
+    output reg [3:0] bn); //第二组位选信号
     
     wire cf0, cf1, cf2; 
     
@@ -52,4 +38,109 @@ module unsigned_int_accumulator(
     .prev_cf(cf2), 
     .out(out3), 
     .post_cf(overflow));
+    
+    reg [20:0] clkdiv;
+    always @(posedge clk or negedge rst) begin
+        if(!rst)
+            clkdiv <= 21'd0;
+        else
+            clkdiv <= clkdiv + 1;
+    end
+    
+    wire [1:0] bitcnt;
+    assign bitcnt = clkdiv[20:19];
+    
+    always @* begin
+        if(!rst)
+            begin
+                an = 4'd0;
+                bn = 4'd0;
+            end
+        else
+            begin
+                an = 4'd0;
+                bn = 4'd0;
+                an[bitcnt] = 1;
+                bn[bitcnt] = 1;
+            end
+    end
+    
+    reg [3:0] digita;
+    reg [3:0] digitb;
+    always @* begin
+        if(!rst)
+            begin
+                digita = 4'd0;
+                digitb = 4'd0;
+            end
+        else
+            case(bitcnt)
+                2'd0: 
+                    begin
+                        digita = {in23, in22, in21, in20} / 10;                        
+                        digitb = {overflow, out3, out2, out1, out0} % 10;
+                    end
+                2'd1: 
+                    begin
+                        digita = 10;
+                        digitb = {overflow, out3, out2, out1, out0} / 10;
+                    end
+                2'd2:
+                    begin
+                        digita = {in13, in12, in11, in10} % 10;
+                        digitb = 11;
+                    end
+                2'd3: 
+                    begin
+                        digita = {in13, in12, in11, in10} / 10;
+                        digitb = {in23, in22, in21, in20} % 10;
+                    end
+                default: 
+                    begin
+                        digita = 4'd0;
+                        digitb = 4'd0;
+                    end
+            endcase
+    end
+    
+    
+    always @* begin
+        if(!rst)
+            begin
+                a_g_a = 7'b1111111;
+                a_g_b = 7'b1111111;
+            end
+        else
+            case(digita)
+                0: a_g_a = 7'b1111110;
+                1: a_g_a = 7'b0110000;
+                2: a_g_a = 7'b1101101;
+                3: a_g_a = 7'b1111001;
+                4: a_g_a = 7'b0110011;
+                5: a_g_a = 7'b1011011;
+                6: a_g_a = 7'b1011111;
+                7: a_g_a = 7'b1110000;
+                8: a_g_a = 7'b1111111;
+                9: a_g_a = 7'b1111011;
+                10: a_g_a = 7'b1110111;
+                11: a_g_a = 7'b0001001;
+                default: a_g_a = 7'b1111110;
+            endcase
+            case(digitb)
+                0: a_g_b = 7'b1111110;
+                1: a_g_b = 7'b0110000;
+                2: a_g_b = 7'b1101101;
+                3: a_g_b = 7'b1111001;
+                4: a_g_b = 7'b0110011;
+                5: a_g_b = 7'b1011011;
+                6: a_g_b = 7'b1011111;
+                7: a_g_b = 7'b1110000;
+                8: a_g_b = 7'b1111111;
+                9: a_g_b = 7'b1111011;
+                10: a_g_b = 7'b1110111;
+                11: a_g_b = 7'b0001001;
+                default: a_g_b = 7'b1111110;
+            endcase
+    end
+    
 endmodule
